@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MELT ZONE | Official FHW Supply</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind CSS with CSS Variables Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--c-primary)',
+                        deep: 'var(--c-deep)',
+                        glow: 'var(--c-glow)',
+                        bgBlack: 'var(--c-bg)',
+                        panelDark: 'var(--c-panel-dark)',
+                        panelMid: 'var(--c-panel-mid)',
+                        panelLight: 'var(--c-panel-light)',
+                        textWhite: 'var(--c-text-white)',
+                        textGray: 'var(--c-text-gray)',
+                        divider: 'var(--c-divider)',
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        display: ['"Orbitron"', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* ==============================================
+         * CSS VARIABLES (THEME ENGINE)
+         * ==============================================
+         */
+        :root {
+            /* DARK MODE (DEFAULT) */
+            --c-primary: #00E5FF;
+            --c-deep: #009FB3;
+            --c-glow: #66F6FF;
+            --c-bg: #0B0F14;
+            --c-panel-dark: #111923;
+            --c-panel-mid: #161F2B;
+            --c-panel-light: #1C2633;
+            --c-text-white: #EAF2FF;
+            --c-text-gray: #A9B3C1;
+            --c-divider: #2A3442;
+            
+            --scanline-opacity: 0.25;
+        }
+
+        body.light-mode {
+            /* LIGHT MODE (LABORATORY WHITE) */
+            --c-primary: #00ABC0; /* Slightly darker cyan for visibility on white */
+            --c-deep: #008CA0;
+            --c-glow: #00E5FF;
+            --c-bg: #F0F4F8;      /* Clean Lab White-Gray */
+            --c-panel-dark: #FFFFFF;
+            --c-panel-mid: #F8FAFC;
+            --c-panel-light: #E2E8F0;
+            --c-text-white: #1A202C; /* Dark text */
+            --c-text-gray: #4A5568;
+            --c-divider: #CBD5E0;
+
+            --scanline-opacity: 0.05; /* Fainter scanlines on light */
+        }
+
+        /* Base Styles */
+        body {
+            background-color: var(--c-bg);
+            color: var(--c-text-white);
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Scanline Overlay */
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, var(--scanline-opacity)) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Utilities */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--c-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--c-panel-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--c-deep); }
+
+        .text-glow { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+        
+        /* Modal Transition */
+        .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .modal.open { opacity: 1; visibility: visible; }
+        .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal.open .modal-content { transform: translateY(0); }
+
+        /* ==============================================
+         * SWITCH EFFECTS (SCAN & FLASH)
+         * ==============================================
+         */
+        #scan-overlay {
+            position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.1s;
+        }
+        #scan-overlay .bg-layer { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); }
+        #scan-overlay .scan-line {
+            position: absolute; top: -10%; left: 0; width: 100%; height: 2px;
+            background: var(--c-primary);
+            box-shadow: 0 0 20px var(--c-primary), 0 0 40px var(--c-primary);
+            opacity: 0;
+        }
+
+        body.scanning #scan-overlay { opacity: 1; }
+        body.scanning #scan-overlay .scan-line { animation: scanLineRun 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        @keyframes scanLineRun {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 110%; opacity: 0; }
+        }
+
+        /* Header Button Styles */
+        .header-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid var(--c-divider);
+            background-color: var(--c-panel-dark);
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .header-btn:hover { border-color: var(--c-primary); filter: brightness(1.1); }
+        .header-btn .hover-line {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+            background: var(--c-primary);
+            transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease-out;
+        }
+        .header-btn:hover .hover-line { transform: scaleX(1); }
+
+        /* ==============================================
+         * MELT EFFECTS (Using Variables)
+         * ==============================================
+         */
+        /* View Story Melt */
+        .btn-view-story { position: relative; overflow: visible; transition: all 0.3s ease; z-index: 10; }
+        .btn-view-story::after { 
+            content: ''; position: absolute; top: calc(100% - 1px); left: 5%; width: 90%; height: 0px; 
+            background: var(--c-deep); 
+            opacity: 0; border-radius: 0 0 10px 10px; filter: blur(2px); transform-origin: top center; transition: height 0.3s ease, opacity 0.3s ease; pointer-events: none; z-index: -1; 
+        }
+        .btn-view-story:hover { border-color: var(--c-primary); box-shadow: 0 0 8px rgba(0, 229, 255, 0.3); background-color: rgba(0, 229, 255, 0.05); }
+        .btn-view-story:hover::after { height: 6px; opacity: 0.6; border-radius: 0 0 50% 50%; transition-delay: 0.1s; }
+        .btn-view-story.is-melting { pointer-events: none; border-color: var(--c-primary); color: var(--c-primary); animation: borderFlash 0.2s forwards; }
+        .btn-view-story.is-melting::after { opacity: 0.8; animation: meltDrop 0.9s cubic-bezier(0.5, 0, 0.2, 1) forwards; }
+        
+        /* Buy Etsy Melt */
+        .btn-buy-etsy { position: relative; overflow: visible; z-index: 20; background: var(--c-panel-dark); transition: all 0.3s ease; box-shadow: 0 0 5px rgba(0, 229, 255, 0.1); border-color: var(--c-divider); }
+        .btn-buy-etsy:hover { border-color: var(--c-primary); background: rgba(0, 229, 255, 0.15); box-shadow: 0 0 15px rgba(0, 229, 255, 0.6), inset 0 0 10px rgba(0, 229, 255, 0.2); transform: scale(1.02); }
+        .btn-buy-etsy:hover span { animation: textHeat 0.1s infinite alternate; }
+        .btn-buy-etsy.is-buying { pointer-events: none; background: var(--c-primary); color: var(--c-bg); border-color: var(--c-primary); box-shadow: 0 0 30px var(--c-primary); animation: squeeze 0.2s forwards; }
+        
+        /* Since keyframes cannot easily use CSS variables for dynamic interpolation in some browsers, we keep simple structure but reference vars where possible or use JS class toggling. For robustness, we use the variable colors in the drip elements directly. */
+        .btn-buy-etsy.is-buying::before { content: ''; position: absolute; top: 100%; left: 20%; width: 15px; height: 0; background: var(--c-primary); border-radius: 0 0 10px 10px; animation: heavyDrip 0.8s cubic-bezier(0.5, 0, 0.2, 1) forwards; animation-delay: 0.1s; }
+        .btn-buy-etsy.is-buying::after { content: ''; position: absolute; top: 100%; right: 20%; width: 12px; height: 0; background: var(--c-primary); border-radius: 0 0 10px 10px; animation: heavyDrip 0.9s cubic-bezier(0.5, 0, 0.2, 1) forwards; animation-delay: 0.2s; }
+        .btn-buy-etsy .drip-center { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 25px; height: 0; background: var(--c-primary); border-radius: 0 0 15px 15px; opacity: 0; }
+        .btn-buy-etsy.is-buying .drip-center { opacity: 1; animation: heavyDripCenter 0.9s cubic-bezier(0.5, 0, 0.2, 1) forwards; }
+
+        /* Back Link */
+        .back-link { position: relative; overflow: hidden; padding-bottom: 2px; }
+        .back-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: var(--c-primary); box-shadow: 0 0 8px var(--c-primary); transform: translateX(-101%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .back-link:hover::after { transform: translateX(0); animation: linePulse 0.1s infinite alternate; }
+        
+        /* Shutter */
+        #shutter-overlay { position: fixed; inset: 0; z-index: 9999; pointer-events: none; transform: translateY(-100%); background: linear-gradient(to bottom, var(--c-primary) 0%, var(--c-bg) 20%, var(--c-bg) 100%); border-bottom: 4px solid var(--c-primary); box-shadow: 0 0 50px rgba(0, 229, 255, 0.5); transition: transform 0.3s cubic-bezier(0.7, 0, 0.3, 1); }
+        #shutter-overlay.active { transform: translateY(0); }
+        body.glitching { animation: screenGlitch 0.2s steps(2) forwards; }
+
+        /* Keyframes */
+        @keyframes borderFlash { 0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.3); } 50% { box-shadow: 0 0 20px var(--c-primary); } 100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); } }
+        @keyframes meltDrop { 0% { height: 6px; border-radius: 0 0 50% 50%; opacity: 0.8; transform: scaleX(1); } 40% { height: 25px; border-radius: 0 0 40% 40%; opacity: 0.9; transform: scaleX(0.95); } 100% { height: 50px; border-radius: 0 0 30% 70%; filter: blur(6px); opacity: 0; transform: scaleX(0.7); } }
+        @keyframes textHeat { from { filter: blur(0px); } to { filter: blur(0.5px); text-shadow: 0 0 5px var(--c-primary); } }
+        @keyframes squeeze { 0% { transform: scale(1.02); } 50% { transform: scale(0.95); } 100% { transform: scale(1.0); } }
+        @keyframes heavyDrip { 0% { height: 0; opacity: 1; } 30% { height: 30px; border-radius: 0 0 50% 50%; width: 10px; } 60% { height: 60px; width: 6px; } 100% { height: 80px; width: 2px; opacity: 0; } }
+        @keyframes heavyDripCenter { 0% { height: 0; opacity: 1; } 20% { height: 20px; border-radius: 0 0 50% 50%; width: 30px; } 50% { height: 70px; width: 15px; border-radius: 0 0 40% 60%; } 100% { height: 100px; width: 5px; opacity: 0; filter: blur(4px); } }
+        @keyframes linePulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes screenGlitch { 0% { transform: translate(0); filter: hue-rotate(0deg); } 20% { transform: translate(-5px, 5px); filter: hue-rotate(90deg) contrast(2); } 40% { transform: translate(5px, -5px); filter: hue-rotate(-90deg) invert(0.1); } 60% { transform: translate(-2px, 2px); filter: hue-rotate(0deg); } 80% { transform: translate(2px, -2px); filter: contrast(1.5); } 100% { transform: translate(0); filter: brightness(0); } }
+
+    </style>
+</head>
+<body class="bg-bgBlack font-sans antialiased min-h-screen flex flex-col relative selection:bg-primary selection:text-black">
+
+    <!-- Scan Overlay for Switch Effects -->
+    <div id="scan-overlay">
+        <div class="bg-layer"></div>
+        <div class="scan-line"></div>
+    </div>
+
+    <!-- Shutter Overlay for Back Navigation -->
+    <div id="shutter-overlay">
+        <div class="absolute bottom-0 left-0 w-full h-2 bg-glow opacity-50 blur-sm"></div>
+    </div>
+
+    <!-- Noise Texture Overlay -->
+    <div class="fixed inset-0 bg-noise pointer-events-none z-0 opacity-40"></div>
+
+    <!-- Navbar -->
+    <header class="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-divider bg-bgBlack/80 backdrop-blur-md sticky top-0 transition-colors duration-300">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-br from-panelLight to-panelDark border border-primary flex items-center justify-center text-primary shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+                <i class="ph-bold ph-lightning text-xl"></i>
+            </div>
+            <span class="font-display font-bold text-lg tracking-wider text-textWhite">MELT ZONE</span>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <!-- Language Switch -->
+            <button id="lang-switch" class="header-btn w-12 h-9">
+                <span id="current-flag" class="text-xl leading-none filter grayscale-[0.3] group-hover:grayscale-0 transition-all">🇺🇸</span>
+                <div class="hover-line"></div>
+            </button>
+
+            <!-- Theme Switch -->
+            <button id="theme-switch" class="header-btn w-12 h-9 text-textGray hover:text-primary">
+                <span id="theme-icon" class="text-xl transition-transform duration-300 rotate-0">🌙</span>
+                <div class="hover-line"></div>
+            </button>
+        </div>
+    </header>
+
+    <!-- HERO Section -->
+    <section class="relative z-10 w-full py-20 md:py-32 flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1px] h-20 bg-gradient-to-b from-primary to-transparent"></div>
+        
+        <h2 id="hero-sub" class="font-display text-primary tracking-[0.2em] text-sm md:text-base mb-4 uppercase opacity-80">Official FHW Supply</h2>
+        
+        <h1 class="font-display font-black text-5xl md:text-7xl lg:text-8xl text-textWhite mb-6 relative">
+            <span class="text-glow z-10 relative">MELT ZONE</span>
+            <span class="absolute top-1 left-1 text-primary opacity-20 blur-[2px] z-0 select-none">MELT ZONE</span>
+        </h1>
+
+        <div class="h-[1px] w-24 bg-primary mb-6 shadow-[0_0_8px_var(--c-primary)]"></div>
+
+        <p id="hero-copy" class="text-textGray text-lg md:text-xl font-light tracking-wide max-w-lg">
+            If it melts, it moves.
+        </p>
+
+        <!-- Background glow -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary rounded-full filter blur-[150px] opacity-[0.07] -z-10 pointer-events-none"></div>
+    </section>
+
+    <!-- Product Grid -->
+    <section class="relative z-10 w-full max-w-7xl mx-auto px-4 pb-32">
+        <div class="flex items-center gap-4 mb-10">
+            <div class="h-[1px] flex-1 bg-divider"></div>
+            <span id="label-products" class="font-display text-textGray text-sm tracking-widest">SELECT ITEMS</span>
+            <div class="h-[1px] flex-1 bg-divider"></div>
+        </div>
+
+        <!-- Grid Container -->
+        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <!-- Cards injected by JS -->
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-divider bg-panelDark py-12 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+            <!-- Back to FHW Link -->
+            <a href="#" id="back-to-home" class="back-link group flex items-center gap-2 text-textGray hover:text-textWhite transition-colors cursor-pointer">
+                <i class="ph ph-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                <span id="footer-back" class="font-display text-sm tracking-wide">Back to FHW</span>
+            </a>
+
+            <div class="flex items-center gap-6">
+                <a href="#" class="text-textGray hover:text-primary transition-transform hover:scale-110">
+                    <i class="ph-fill ph-instagram-logo text-2xl"></i>
+                </a>
+                <a href="#" class="text-textGray hover:text-primary transition-transform hover:scale-110">
+                    <i class="ph-fill ph-youtube-logo text-2xl"></i>
+                </a>
+            </div>
+
+            <div class="text-divider text-xs font-display tracking-wider">
+                © FUNKY HOTDOG WORKS
+            </div>
+        </div>
+    </footer>
+
+    <!-- Story Modal -->
+    <div id="story-modal" class="modal fixed inset-0 z-40 flex items-center justify-center p-4 bg-bgBlack/90 backdrop-blur-md">
+        <div class="modal-content w-full max-w-lg bg-panelMid border border-divider rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden">
+            <div class="bg-panelDark px-6 py-4 border-b border-divider flex justify-between items-center">
+                <h3 id="modal-title" class="font-display text-primary text-xl font-bold tracking-wide">TITLE</h3>
+                <button onclick="closeModal()" class="text-textGray hover:text-textWhite transition-colors">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 md:p-8">
+                <div class="mb-6 relative">
+                     <div class="w-full h-48 bg-panelLight rounded border border-divider flex items-center justify-center overflow-hidden">
+                         <img id="modal-img" src="" alt="Detail" class="w-full h-full object-cover opacity-80 mix-blend-overlay">
+                         <!-- Added mix-blend-overlay so images adapt better to themes -->
+                     </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <span id="label-concept" class="text-primary text-xs font-display tracking-widest uppercase mb-1 block">Concept</span>
+                        <p id="modal-concept" class="text-textWhite text-sm leading-relaxed font-light">...</p>
+                    </div>
+                    <div>
+                        <span id="label-lore" class="text-primary text-xs font-display tracking-widest uppercase mb-1 block">Lore</span>
+                        <p id="modal-lore" class="text-textGray text-sm leading-relaxed italic border-l-2 border-primary pl-3">...</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-divider flex flex-col gap-3">
+                    <button onclick="window.open('#', '_blank')" class="w-full py-3 bg-primary/10 border border-primary text-primary font-display font-bold tracking-widest hover:bg-primary hover:text-bgBlack transition-all uppercase text-sm flex items-center justify-center gap-2">
+                        <span id="modal-buy-etsy-text">BUY ON ETSY</span> <i class="ph-bold ph-arrow-up-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const dictionary = {
+            en: {
+                flag: "🇺🇸",
+                heroSub: "Official FHW Supply",
+                heroCopy: "If it melts, it moves.",
+                labelProducts: "SELECT ITEMS",
+                btnStory: "VIEW STORY",
+                btnEtsy: "BUY ON ETSY",
+                btnAmazon: "BUY ON AMAZON",
+                footerBack: "Back to FHW",
+                labelConcept: "DESIGN CONCEPT",
+                labelLore: "SECRET LORE"
+            },
+            jp: {
+                flag: "🇯🇵",
+                heroSub: "公式物資供給所",
+                heroCopy: "溶けたら、物語が動く。",
+                labelProducts: "取扱物資一覧",
+                btnStory: "背景を見る",
+                btnEtsy: "Etsyで入手",
+                btnAmazon: "Amazonで入手",
+                footerBack: "FHWへ戻る",
+                labelConcept: "制作意図",
+                labelLore: "裏設定"
+            }
+        };
+
+        const items = [
+            {
+                id: 1,
+                img: "https://placehold.co/600x400/161F2B/00E5FF?text=LEGEND",
+                title: "LEGEND BEGINS AGAIN",
+                tagline: { en: "The flagship model.", jp: "伝説は、ここから再始動する。" },
+                storyShort: { en: "A symbol of returning to the origin. Pure speed aesthetics.", jp: "原点回帰の象徴。純粋な速度の美学を形にしたフラッグシップ。" },
+                concept: { en: "Created to symbolize the rebirth of the brand. Sharp angles meet fluid dynamics.", jp: "ブランドの再生を象徴するために制作。鋭角なフォルムと流体力学の融合。" },
+                lore: { en: "\"The engine never cooled down since that day.\"", jp: "「あの日から、エンジンは一度も冷えていない。」" },
+                links: { etsy: "#", amazon: "#" }
+            },
+            {
+                id: 2,
+                img: "https://placehold.co/600x400/161F2B/00E5FF?text=START+LINE",
+                title: "START LINE",
+                tagline: { en: "Inspired by NASCAR spirits.", jp: "オーバルコースの熱狂をその手に。" },
+                storyShort: { en: "Rugged durability meets race-ready design. For the challengers.", jp: "無骨な耐久性とレース仕様のデザイン。すべての挑戦者へ。" },
+                concept: { en: "Heavy-duty design referencing stock car chassis structures.", jp: "ストックカーのシャーシ構造を参照したヘビーデューティーな設計。" },
+                lore: { en: "\"3, 2, 1, Melt.\"", jp: "「3, 2, 1, メルト。」" },
+                links: { etsy: "#", amazon: null }
+            },
+            {
+                id: 3,
+                img: "https://placehold.co/600x400/161F2B/00E5FF?text=GOLD+MEDAL",
+                title: "GOLD MEDAL",
+                tagline: { en: "The glorious finish.", jp: "栄光の対となる存在。" },
+                storyShort: { en: "A golden accent in a dark world. Reward yourself.", jp: "暗闇の世界における唯一の金。己への報酬。" },
+                concept: { en: "Contrast study using metallic gold texture against matte black.", jp: "マットブラックに対するメタリックゴールドの対比実験。" },
+                lore: { en: "\"Not for the second place.\"", jp: "「2位のために用意されたものではない。」" },
+                links: { etsy: "#", amazon: "#" }
+            }
+        ];
+
+        let currentLang = 'en';
+        let isDarkMode = true;
+
+        function init() {
+            render();
+            setupEventListeners();
+        }
+
+        // --- SCAN EFFECT TRIGGER ---
+        function runScanEffect(callback) {
+            document.body.classList.add('scanning');
+            setTimeout(() => {
+                if (callback) callback();
+            }, 150); // Action happens at peak darkness
+            setTimeout(() => {
+                document.body.classList.remove('scanning');
+            }, 400);
+        }
+
+        function toggleLang() {
+            runScanEffect(() => {
+                currentLang = currentLang === 'en' ? 'jp' : 'en';
+                render();
+            });
+        }
+
+        function toggleTheme() {
+            runScanEffect(() => {
+                isDarkMode = !isDarkMode;
+                const themeIcon = document.getElementById('theme-icon');
+                
+                if (isDarkMode) {
+                    document.body.classList.remove('light-mode');
+                    themeIcon.textContent = "🌙";
+                    themeIcon.style.transform = "rotate(0deg)";
+                } else {
+                    document.body.classList.add('light-mode');
+                    themeIcon.textContent = "☀️";
+                    themeIcon.style.transform = "rotate(180deg)";
+                }
+            });
+        }
+
+        function render() {
+            const dict = dictionary[currentLang];
+            document.getElementById('current-flag').textContent = dict.flag;
+            document.getElementById('hero-sub').textContent = dict.heroSub;
+            document.getElementById('hero-copy').textContent = dict.heroCopy;
+            document.getElementById('label-products').textContent = dict.labelProducts;
+            document.getElementById('footer-back').textContent = dict.footerBack;
+            document.getElementById('label-concept').textContent = dict.labelConcept;
+            document.getElementById('label-lore').textContent = dict.labelLore;
+            document.getElementById('modal-buy-etsy-text').textContent = dict.btnEtsy;
+            
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = items.map(item => createCardHTML(item, dict)).join('');
+        }
+
+        function createCardHTML(item, dict) {
+            const amazonBtn = item.links.amazon 
+                ? `<button onclick="window.open('${item.links.amazon}', '_blank')" class="w-full py-2 bg-panelLight border border-divider text-textGray font-display text-xs font-bold tracking-wider hover:border-textGray hover:text-white transition-colors uppercase">
+                    ${dict.btnAmazon}
+                   </button>` 
+                : '';
+
+            const specialClass = item.id === 1 ? 'melt-strong' : '';
+
+            return `
+            <div class="group relative bg-panelMid border border-divider rounded-lg overflow-hidden hover:border-primary transition-colors duration-300">
+                <div class="w-full h-48 bg-panelLight overflow-hidden relative">
+                     <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors z-10"></div>
+                    <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 mix-blend-overlay">
+                </div>
+                
+                <div class="p-5 flex flex-col h-auto">
+                    <h3 class="font-display font-bold text-textWhite text-lg tracking-wide mb-1 group-hover:text-primary transition-colors">${item.title}</h3>
+                    <p class="text-xs text-primary font-medium tracking-wider uppercase mb-3 opacity-80">${item.tagline[currentLang]}</p>
+                    <p class="text-sm text-textGray leading-relaxed mb-6 border-l border-divider pl-3 h-10 overflow-hidden text-ellipsis display-box line-clamp-2">
+                        ${item.storyShort[currentLang]}
+                    </p>
+                    
+                    <div class="mt-auto space-y-2">
+                        <button onclick="handleViewStory(event, ${item.id})" class="btn-view-story ${specialClass} w-full py-2 border border-primary text-primary font-display text-xs font-bold tracking-widest uppercase mb-1">
+                            <span>${dict.btnStory}</span>
+                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="handleBuyEtsy(event, '${item.links.etsy}')" class="btn-buy-etsy w-full py-2 border border-divider text-textGray font-display text-xs font-bold tracking-widest uppercase relative">
+                                <span class="drip-center"></span>
+                                <span class="relative z-10">${dict.btnEtsy}</span>
+                            </button>
+                            ${amazonBtn}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        function handleViewStory(e, itemId) {
+            const btn = e.currentTarget;
+            if (btn.classList.contains('is-melting')) return;
+            btn.classList.add('is-melting');
+            setTimeout(() => {
+                openModal(itemId);
+                setTimeout(() => { btn.classList.remove('is-melting'); }, 300);
+            }, 900);
+        }
+
+        function handleBuyEtsy(e, url) {
+            const btn = e.currentTarget;
+            if (btn.classList.contains('is-buying')) return;
+            btn.classList.add('is-buying');
+            setTimeout(() => {
+                window.open(url, '_blank');
+                setTimeout(() => { btn.classList.remove('is-buying'); }, 1000);
+            }, 1000);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('lang-switch').addEventListener('click', toggleLang);
+            document.getElementById('theme-switch').addEventListener('click', toggleTheme);
+            
+            const backLink = document.getElementById('back-to-home');
+            backLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const shutter = document.getElementById('shutter-overlay');
+                shutter.classList.add('active');
+                setTimeout(() => { document.body.classList.add('glitching'); }, 200);
+                setTimeout(() => { window.location.reload(); }, 600);
+            });
+        }
+
+        function openModal(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if(!item) return;
+            const dict = dictionary[currentLang];
+            document.getElementById('modal-title').textContent = item.title;
+            document.getElementById('modal-img').src = item.img;
+            document.getElementById('modal-concept').textContent = item.concept[currentLang];
+            document.getElementById('modal-lore').textContent = item.lore[currentLang];
+            const modalEtsyBtn = document.querySelector('#story-modal button[onclick*="window.open"]');
+             if(modalEtsyBtn) modalEtsyBtn.onclick = () => window.open(item.links.etsy, '_blank');
+            document.getElementById('story-modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('story-modal').classList.remove('open');
+        }
+
+        document.getElementById('story-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('story-modal')) closeModal();
+        });
+
+        init();
+    </script>
+</body>
+</html>
+
